@@ -12,36 +12,38 @@ class App extends Component {
     notes: []
   }
   
-  updateLogic = ( updatedNote ) => { 
+  updateListener = ( res ) => { 
+    const updatedNote = res.value.data.onUpdateNote
     const index = this.state.notes.findIndex( n => n.id ===  updatedNote.id )
     const notes = update( this.state.notes, { [index]: { $set: updatedNote } } )
     const updates = { notes: notes, note: '', id: '' }
     this.setState(updates)
   }
-  createLogic = (note) => {
+  createListener = (res) => {
+    const note = res.value.data.onCreateNote
     const notes = update( this.state.notes, {$push: [note]})
     const updates = { note: '', notes: notes }
     this.setState(updates)
   }
-  deleteLogic = (noteId) => {
+  deleteListener = ( res ) => {
+    const noteId = res.value.data.onDeleteNote.id;
     const notes = this.state.notes.filter(n => n.id !== noteId)
     this.setState({ notes })
   }
   
   componentDidMount = () => {
     this.getNotes()
-    this.createListener = API.graphql( graphqlOperation( onCreateNote ) ).subscribe({
-      next: res => this.createLogic(res.value.data.onCreateNote)
+    API.graphql( graphqlOperation( onCreateNote ) ).subscribe( {
+      next: this.createListener
     })
 
-    this.deleteListener = API.graphql( graphqlOperation( onDeleteNote ) ).subscribe({
-      next: res => this.deleteLogic(res.value.data.onDeleteNote.id)        
+    API.graphql( graphqlOperation( onDeleteNote ) ).subscribe({
+      next: this.deleteListener        
     } )
 
-    this.updateListener = API.graphql( graphqlOperation( onUpdateNote ) ).subscribe( {
-      next: res => this.updateLogic(res.value.data.onUpdateNote)
+    API.graphql( graphqlOperation( onUpdateNote ) ).subscribe( {
+      next: this.updateListener
     })
-    
   }
   
   componentWillUnmount = () => {
