@@ -12,19 +12,6 @@ class App extends Component {
     notes: []
   }
   
-  updateListener = ( res ) => { 
-    const updatedNote = res.value.data.onUpdateNote
-    const index = this.state.notes.findIndex( n => n.id ===  updatedNote.id )
-    const notes = update( this.state.notes, { [index]: { $set: updatedNote } } )
-    const updates = { notes: notes, note: '', id: '' }
-    this.setState(updates)
-  }
-  createListener = (res) => {
-    const note = res.value.data.onCreateNote
-    const notes = update( this.state.notes, {$push: [note]})
-    const updates = { note: '', notes: notes }
-    this.setState(updates)
-  }
   deleteListener = ( res ) => {
     const noteId = res.value.data.onDeleteNote.id;
     const notes = this.state.notes.filter(n => n.id !== noteId)
@@ -33,17 +20,35 @@ class App extends Component {
   
   componentDidMount = () => {
     this.getNotes()
-    API.graphql( graphqlOperation( onCreateNote ) ).subscribe( {
-      next: this.createListener
-    })
+    this.createListener = API.graphql( graphqlOperation( onCreateNote ) )
+      .subscribe( {
+        next: res => {
+          const note = res.value.data.onCreateNote
+          const notes = update( this.state.notes, {$push: [note]})
+          const updates = { note: '', notes: notes }
+          this.setState(updates)
+        }
+      } )
 
-    API.graphql( graphqlOperation( onDeleteNote ) ).subscribe({
-      next: this.deleteListener        
-    } )
+    this.deleteListener = API.graphql( graphqlOperation( onDeleteNote ) )
+      .subscribe( {
+        next: res => {
+          const noteId = res.value.data.onDeleteNote.id;
+          const notes = this.state.notes.filter(n => n.id !== noteId)
+          this.setState({ notes })
+        }
+      } )
 
-    API.graphql( graphqlOperation( onUpdateNote ) ).subscribe( {
-      next: this.updateListener
-    })
+    this.updateListener = API.graphql( graphqlOperation( onUpdateNote ) )
+      .subscribe( {
+        next: res => { 
+          const updatedNote = res.value.data.onUpdateNote
+          const index = this.state.notes.findIndex( n => n.id ===  updatedNote.id )
+          const notes = update( this.state.notes, { [index]: { $set: updatedNote } } )
+          const updates = { notes: notes, note: '', id: '' }
+          this.setState(updates)
+        }
+      } )
   }
   
   componentWillUnmount = () => {
